@@ -74,8 +74,6 @@ y_val_pred = model.predict(X_val_vec)
 y_test_pred = model.predict(X_test_vec)
 
 # Funciones para mostrar gráficas y resultados
-# Funciones para mostrar gráficas y resultados
-
 def show_roc_curve():
     """
     Genera y muestra la curva ROC (Receiver Operating Characteristic) tanto para los conjuntos de validación como de prueba.
@@ -272,7 +270,6 @@ def regenerar_archivo():
     try:
         # Llamar a la función `create` para limpiar, combinar y deduplicar los datos
         create()
-        messagebox.showinfo("Éxito", "Archivo combinado regenerado correctamente.")
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error al regenerar el archivo: {e}")
 
@@ -324,6 +321,9 @@ def classify_message():
     if not message.strip():  # Verificar que no esté vacío
         messagebox.showwarning("Advertencia", "Por favor, ingrese un mensaje.")  # Advertencia si no hay contenido
         return
+    
+    # Limpiar el cuadro de texto después de obtener el mensaje
+    entry_message.delete(0, tk.END)
 
     # Vectorizar el mensaje para prepararlo para el modelo
     message_vec = vectorizer.transform([message])

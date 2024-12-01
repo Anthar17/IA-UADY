@@ -72,6 +72,10 @@ def combine_deduplicate(bases):
         base['sms'] = base['sms'].str.replace(r'\r\n', ' ', regex=True)  # Remover \r\n
         base['sms'] = base['sms'].str.replace(r'^Subject:\s*', '', regex=True)  # Remover "Subject:"
         base['sms'] = base['sms'].str.replace(r'\benron\b', '', regex=True)  # Remover "enron" como palabra completa
+        base['sms'] = base['sms'].str.replace(r'\byour\b', '', regex=True)  # Remover "your" como palabra completa
+        base['sms'] = base['sms'].str.replace(r'\bkaminski\b', '', regex=True)  # Remover "kaminski" como palabra completa
+        base['sms'] = base['sms'].str.replace(r'\bvince\b', '', regex=True)  # Remover "enron" como palabra completa
+        
     
     # Combinar las bases y eliminar duplicados
     combined_data = pd.concat(bases, ignore_index=True)
