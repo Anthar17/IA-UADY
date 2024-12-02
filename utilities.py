@@ -20,38 +20,10 @@ import pandas as pd
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-def clean_null(data):
+def read_clean_convert(base_path):
     """
-    Limpia los datos eliminando los valores nulos y corrigiendo inconsistencias.
-    """
-    
-    # Asegurarse de trabajar con una copia
-    data = data.copy()
-
-    # Limpiar nombres de columnas para evitar errores
-    data.columns = data.columns.str.strip()
-
-    # Eliminar valores nulos en 'sms'
-    data = data.dropna(subset=['sms'])
-
-    # Convertir todo a cadenas válidas
-    data['sms'] = data['sms'].astype(str)
-    data['sms'] = data['sms'].str.strip()  # Eliminar espacios en blanco
-
-    # Eliminar filas con contenido no interpretable
-    data = data[data['sms'] != '']  # Eliminar cadenas vacías
-    data = data[~data['sms'].str.contains(r'^\s*$', regex=True)]  # Eliminar filas con solo espacios
-    data = data[data['sms'].apply(lambda x: isinstance(x, str))]  # Asegurarse de que sean cadenas
-
-    # Verificar y eliminar valores nulos en 'class'
-    data = data.dropna(subset=['class'])  # Eliminar valores nulos en 'class'
-    data = data[data['class'].isin([0, 1])]  # Asegurar etiquetas válidas
-
-    return data  # Devolver el DataFrame limpio
-
-def read_and_convert(base_path):
-    """
-    Lee un archivo CSV y convierte las etiquetas de clase a formato numérico.
+    Lee un archivo CSV, convierte las etiquetas de clase a formato numérico,
+    y limpia los datos eliminando valores nulos y corrigiendo inconsistencias.
     """
     
     # Leer las bases
@@ -60,7 +32,30 @@ def read_and_convert(base_path):
     # Convertir ham/spam a 0 y 1
     if 'ham' in base['class'].unique():
         base['class'] = base['class'].map({'ham': 0, 'spam': 1})
-    return base
+    
+    # Asegurarse de trabajar con una copia
+    base = base.copy()
+
+    # Limpiar nombres de columnas para evitar errores
+    base.columns = base.columns.str.strip()
+
+    # Eliminar valores nulos en 'sms'
+    base = base.dropna(subset=['sms'])
+
+    # Convertir todo a cadenas válidas
+    base['sms'] = base['sms'].astype(str)
+    base['sms'] = base['sms'].str.strip()  # Eliminar espacios en blanco
+
+    # Eliminar filas con contenido no interpretable
+    base = base[base['sms'] != '']  # Eliminar cadenas vacías
+    base = base[base['sms'].apply(lambda x: isinstance(x, str))]  # Asegurarse de que sean cadenas
+
+    # Verificar y eliminar valores nulos en 'class'
+    base = base.dropna(subset=['class'])  # Eliminar valores nulos en 'class'
+    base = base[base['class'].isin([0, 1])]  # Asegurar etiquetas válidas
+
+    return base  # Devolver el DataFrame limpio
+
 
 def combine_deduplicate(bases):
     """
@@ -74,7 +69,7 @@ def combine_deduplicate(bases):
         base['sms'] = base['sms'].str.replace(r'\benron\b', '', regex=True)  # Remover "enron" como palabra completa
         base['sms'] = base['sms'].str.replace(r'\byour\b', '', regex=True)  # Remover "your" como palabra completa
         base['sms'] = base['sms'].str.replace(r'\bkaminski\b', '', regex=True)  # Remover "kaminski" como palabra completa
-        base['sms'] = base['sms'].str.replace(r'\bvince\b', '', regex=True)  # Remover "enron" como palabra completa
+        base['sms'] = base['sms'].str.replace(r'\bvince\b', '', regex=True)  # Remover "vince" como palabra completa
         
     
     # Combinar las bases y eliminar duplicados
@@ -101,7 +96,6 @@ def save_and_load(combined_data, output_path="local_data/spam_combined.csv"):
         messagebox.showerror("Error", "No se encontró la base combinada.")
         return None  # Devolver None para indicar error en lugar de salir del programa
 
-
 def create():
     """
     Realiza el proceso completo de leer, combinar, deduplicar y limpiar las bases de datos.
@@ -111,15 +105,12 @@ def create():
     base2_path = "local_data/spam2.csv"
 
     # Leer y convertir las bases
-    base1 = read_and_convert(base1_path)
-    base2 = read_and_convert(base2_path)
+    base1 = read_clean_convert(base1_path)
+    base2 = read_clean_convert(base2_path)
     bases = [base1, base2]
 
     # Limpiar, combinar y deduplicar las bases
     combined_data = combine_deduplicate(bases)
-
-    # Limpiar valores nulos del combinado
-    combined_data = clean_null(combined_data)
 
     data = save_and_load(combined_data)
 
@@ -128,27 +119,53 @@ def create():
 def msj_start(msj):
     """
     Muestra un mensaje emergente durante 2 segundos.
+    
+    Parámetros:
+    msj (str): El mensaje que se mostrará en la ventana emergente.
+    
+    Esta función crea una ventana emergente utilizando `tkinter` que muestra 
+    un mensaje centrado en la pantalla por un tiempo determinado (2 segundos)
+    antes de cerrarse automáticamente.
     """
     
-    root = tk.Tk()
-    root.title("Mensaje de Carga")  # Título de la ventana
-    label = ttk.Label(root, text=msj)
-    label.pack(expand=True, padx=20, pady=20)
+    root = tk.Tk()  # Crea la ventana principal
+    root.title("Mensaje de Carga")  # Título de la ventana emergente
+    label = ttk.Label(root, text=msj)  # Etiqueta que contiene el mensaje
+    label.pack(expand=True, padx=20, pady=20)  # Ajusta el diseño del mensaje
+    
+    # Dimensiones de la ventana emergente
     ancho = 300
     alto = 150
+    
+    # Configura el tamaño de la ventana
     root.geometry(f"{ancho}x{alto}")
-    root.update_idletasks()
+    root.update_idletasks()  # Fuerza a la interfaz a procesar cualquier actualización pendiente
+    
+    # Calcula las coordenadas para centrar la ventana en la pantalla
     x = (root.winfo_screenwidth() // 2) - (ancho // 2)
     y = (root.winfo_screenheight() // 2) - (alto // 2)
-    root.geometry(f"+{x}+{y}")
+    root.geometry(f"+{x}+{y}")  # Coloca la ventana en la posición calculada
+    
+    # Programa el cierre automático de la ventana después de 2 segundos
     root.after(2000, root.destroy)
-    root.mainloop()
+    
+    root.mainloop()  # Inicia el bucle principal de eventos para mostrar la ventana
+
     
 def create_button(frame, text, command, pady=5):
     """
     Crea un botón en la interfaz gráfica con las propiedades dadas.
+    
+    Parámetros:
+    frame (tk.Frame o tk.Widget): El contenedor donde se agregará el botón.
+    text (str): El texto que se mostrará en el botón.
+    command (callable): La función que se ejecutará cuando se presione el botón.
+    pady (int, opcional): El espaciado vertical alrededor del botón (por defecto, 5).
+    
+    Retorno:
+    ttk.Button: El objeto botón creado.
     """
     
-    btn = ttk.Button(frame, text=text, command=command)
-    btn.pack(pady=pady)
-    return btn
+    btn = ttk.Button(frame, text=text, command=command)  # Crea un botón con las propiedades dadas
+    btn.pack(pady=pady)  # Empaqueta el botón en el contenedor con el espaciado especificado
+    return btn  # Devuelve el botón para posibles usos adicionales

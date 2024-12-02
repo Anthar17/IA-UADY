@@ -21,28 +21,12 @@ from sklearn.metrics import accuracy_score, classification_report, roc_curve, ro
 import matplotlib.pyplot as plt
 import seaborn as sns
 from tkinter import ttk, messagebox, scrolledtext
-from utilities import clean_null, read_and_convert, combine_deduplicate, create, save_and_load, create_button
+from utilities import create, create_button
 import pandas as pd
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 
-# Definición de las rutas de los archivos CSV a utilizar para entrenamiento del modelo.
-base1_path = "local_data/spam.csv"
-base2_path = "local_data/spam2.csv"
-
-# Lectura de los datos y conversión utilizando una función externa definida en utilities.
-base1 = read_and_convert(base1_path)
-base2 = read_and_convert(base2_path)
-bases = [base1, base2]
-
-# Combinar los datos de los dos archivos y eliminar duplicados para limpiar la base de datos.
-combined_data = combine_deduplicate(bases)
-
-# Se eliminan los valores nulos que puedan estar presentes en los datos combinados.
-combined_data = clean_null(combined_data)
-
-# Guardar y cargar los datos combinados (guardado en disco y carga posterior).
-data = save_and_load(combined_data)
+data = create()
 
 # Preparación de datos
 # Se separan los datos en la columna 'sms' (entrada X) y la columna 'class' (objetivo y).
@@ -63,7 +47,7 @@ X_train_vec = vectorizer.fit_transform(X_train)
 X_val_vec = vectorizer.transform(X_val)
 X_test_vec = vectorizer.transform(X_test)
 
-# Entrenamiento de un modelo de Regresión Logística con los datos vectorizados.
+# Entrenamiento del modelo con los datos vectorizados.
 model = LogisticRegression(max_iter=10000, class_weight='balanced')
 model.fit(X_train_vec, y_train)
 
@@ -149,9 +133,9 @@ def show_word_importance():
     features = vectorizer.get_feature_names_out()
     coefficients = model.coef_[0]
 
-    # Seleccionar los 10 coeficientes más positivos y más negativos
-    top_positive_indices = coefficients.argsort()[-10:]
-    top_negative_indices = coefficients.argsort()[:10]
+    # Seleccionar los 12 coeficientes más positivos y más negativos
+    top_positive_indices = coefficients.argsort()[-12:]
+    top_negative_indices = coefficients.argsort()[:12]
 
     # Crear un DataFrame con las palabras más importantes y sus coeficientes
     top_features = pd.DataFrame({
@@ -273,7 +257,7 @@ def regenerar_archivo():
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error al regenerar el archivo: {e}")
 
-def show_dataset_stats():
+def show_dataset_stats(dataset = data):
     """
     Muestra estadísticas generales del dataset, como el total de mensajes y sus proporciones de spam y no spam.
     """
@@ -282,17 +266,17 @@ def show_dataset_stats():
     stats_window.geometry("400x200")
 
     # Calcular estadísticas del dataset
-    total_messages = len(combined_data)
-    spam_messages = len(combined_data[combined_data['class'] == 1])
-    ham_messages = len(combined_data[combined_data['class'] == 0])
-    avg_spam_length = combined_data[combined_data['class'] == 1]['sms'].str.len().mean()
-    avg_ham_length = combined_data[combined_data['class'] == 0]['sms'].str.len().mean()
+    total_messages = len(dataset)
+    spam_messages = len(dataset[dataset['class'] == 1])
+    ham_messages = len(dataset[dataset['class'] == 0])
+    avg_spam_length = dataset[dataset['class'] == 1]['sms'].str.len().mean()
+    avg_ham_length = dataset[dataset['class'] == 0]['sms'].str.len().mean()
 
     # Mostrar las estadísticas en la ventana
     stats = f"""
     Total de mensajes: {total_messages}
-    Mensajes SPAM: {spam_messages} ({spam_messages/total_messages*100:.2f}%)
-    Mensajes NO SPAM: {ham_messages} ({ham_messages/total_messages*100:.2f}%)
+    Mensajes SPAM: {spam_messages} ({spam_messages / total_messages * 100:.2f}%)
+    Mensajes NO SPAM: {ham_messages} ({ham_messages / total_messages * 100:.2f}%)
     Longitud promedio SPAM: {avg_spam_length:.2f} caracteres
     Longitud promedio NO SPAM: {avg_ham_length:.2f} caracteres
     """
